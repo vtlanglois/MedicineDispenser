@@ -40,7 +40,7 @@ Sensor waterPumpSensor = {12,13,0,0};
 Servo pillDropperServo;
 Servo waterPumpServo;
 
-PillDropper pillDropper = {2, true, -60, pillDropperEStop, pillDropperSensor};
+PillDropper pillDropper = {2, true, 60, pillDropperEStop, pillDropperSensor};
 WaterPump waterPump = {3, true, waterPumpEStop, waterPumpSensor};
 
 
@@ -54,6 +54,7 @@ void setup() {
   pinMode(pillDropper.state.buttonPin, INPUT_PULLUP);
   digitalWrite(pillDropper.state.ledPin, HIGH);
   pillDropperServo.attach(pillDropper.motorPin);
+  pillDropperServo.write(-pillDropper.dropDistance);  
   //WaterPump  
   pinMode(waterPump.motorPin, OUTPUT);
   digitalWrite(waterPump.motorPin, LOW);
@@ -122,6 +123,7 @@ void loop() {
   waterPump.state.state = digitalRead(waterPump.state.buttonPin);
   if(waterPump.state.state == LOW) {
     waterPump.state.isOn = false;
+    digitalWrite(waterPump.motorPin, LOW);
   }
 
   if(waterPump.state.isOn) {
