@@ -3,21 +3,20 @@
 Servo myservo;  // create servo object to control a servo
 // twelve servo objects can be created on most boards
 const int trigPin = 10;
-const int echoPin = 9;
-const int motorPin = 5;
+const int echoPin = 11;
+const int motorPin = 2;
 
 long duration;
 int distance;
 bool canDispense= false;
 
 int pos = 15;    // variable to store the servo position
-int dropDistance = -45;
+int dropDistance = -60;
 
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   myservo.attach(motorPin);  // attaches the servo on pin 9 to the servo object
-  myservo.write(pos);
 }
 
 void loop() {
@@ -45,8 +44,8 @@ void loop() {
   if(distance == 2 && canDispense) {
     canDispense = false;
     myservo.write(dropDistance);
-    delay(500);
-    myservo.write(pos);
+    delay(1000);
+    myservo.write(-dropDistance);
     delay(1000);
   } else if (distance >= 10) {
     canDispense = true;

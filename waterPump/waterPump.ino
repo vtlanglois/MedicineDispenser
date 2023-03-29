@@ -6,9 +6,9 @@
 
 */
 // defines pins numbers
-const int trigPin = 10;
-const int echoPin = 9;
-const int motorPin = 5;
+const int trigPin = 12;
+const int echoPin = 13;
+const int motorPin = 3;
 // defines variables
 long duration;
 int distance;
@@ -37,7 +37,7 @@ void loop() {
   if(distance == 2 && canDispense) {
     canDispense = false;
     digitalWrite(motorPin, HIGH);
-    delay(1000);
+    delay(2000);
   } else if (distance >= 10) {
     digitalWrite(motorPin, LOW);
     canDispense = true;
