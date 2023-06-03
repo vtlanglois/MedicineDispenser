@@ -1,41 +1,44 @@
-#include<Servo.h>
+#include <Servo.h>
 
-
-struct EStop {
-    const int ledPin;
-    const int buttonPin;
-    int state;
-    bool isOn;
+struct EStop
+{
+  const int ledPin;    // the led/output pin
+  const int buttonPin; // the button/input pin
+  int state;           // the state of the button (pressed/not pressed)
+  bool isOn;           // is the mechanism on(True) or off(False)?
 };
 
-struct Sensor {
-  const int trigPin;
-  const int echoPin;
-  long duration;
-  int distance;
+struct Sensor
+{
+  const int trigPin; // ultrasonic's TRIG pin
+  const int echoPin; // utrasonic's ECHO pin
+  long duration;     // the sound wave travel time in microseconds
+  int distance;      // the calculated distance
 };
 
-struct WaterPump {
-  const int motorPin;
-  bool canDispense;
-  EStop state;
-  Sensor sensor;
+struct WaterPump
+{
+  const int motorPin; // the pin for the water pump
+  bool canDispense;   // can the mechanism pump water?
+  EStop btn;          // the mechanism's Estop button
+  Sensor sensor;      // water pump's sensor
 };
 
-struct PillDropper {
-  const int motorPin;
-  bool canDispense;
-  int dropDistance;
-  EStop state;
-  Sensor sensor;
+struct PillDropper
+{
+  const int motorPin; // the pin for the servo motor
+  bool canDispense;   // can the mechanism drop pills?
+  int dropDistance;   // how far the servo moves up and down
+  EStop btn;          // the mechanism's Estop button
+  Sensor sensor;      // pill dropper's sensor
 };
 
-//ORDER: led, button, TRUE
+// ORDER: led, button, TRUE
 EStop pillDropperEStop = {4, 6, 0, true};
 EStop waterPumpEStop = {5, 7, 0, true};
-//ORDER: trig, echo, 0, 0
-Sensor pillDropperSensor = {10, 11, 0,0};
-Sensor waterPumpSensor = {12,13,0,0};
+// ORDER: trig, echo, 0, 0
+Sensor pillDropperSensor = {10, 11, 0, 0};
+Sensor waterPumpSensor = {12, 13, 0, 0};
 
 Servo pillDropperServo;
 Servo waterPumpServo;
@@ -43,31 +46,36 @@ Servo waterPumpServo;
 PillDropper pillDropper = {2, true, 60, pillDropperEStop, pillDropperSensor};
 WaterPump waterPump = {3, true, waterPumpEStop, waterPumpSensor};
 
-
-
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
-  //PillDropper
+  // PillDropper
+  // mechanism
   pinMode(pillDropper.sensor.trigPin, OUTPUT);
   pinMode(pillDropper.sensor.echoPin, INPUT);
-  pinMode(pillDropper.state.ledPin, OUTPUT);
-  pinMode(pillDropper.state.buttonPin, INPUT_PULLUP);
-  digitalWrite(pillDropper.state.ledPin, HIGH);
+  // estop
+  pinMode(pillDropper.btn.ledPin, OUTPUT);
+  pinMode(pillDropper.btn.buttonPin, INPUT_PULLUP);
+  digitalWrite(pillDropper.btn.ledPin, HIGH);
   pillDropperServo.attach(pillDropper.motorPin);
-  pillDropperServo.write(-pillDropper.dropDistance);  
-  //WaterPump  
+  pillDropperServo.write(-pillDropper.dropDistance);
+  // WaterPump
+  // mechanism
   pinMode(waterPump.motorPin, OUTPUT);
   digitalWrite(waterPump.motorPin, LOW);
   pinMode(waterPump.sensor.trigPin, OUTPUT);
   pinMode(waterPump.sensor.echoPin, INPUT);
-  pinMode(waterPump.state.ledPin, OUTPUT);
-  pinMode(waterPump.state.buttonPin, INPUT_PULLUP);
-  digitalWrite(waterPump.state.ledPin, HIGH);
+  // estop
+  pinMode(waterPump.btn.ledPin, OUTPUT);
+  pinMode(waterPump.btn.buttonPin, INPUT_PULLUP);
+  digitalWrite(waterPump.btn.ledPin, HIGH);
 }
 
-void loop() {
+void loop()
+{
   // put your main code here, to run repeatedly:
-  //Pill Dropper
+  // Pill Dropper
+  // detect if hand is next to the front of the mechanism thru the ultrasonic sensor
   digitalWrite(pillDropper.sensor.trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(pillDropper.sensor.trigPin, HIGH);
@@ -75,19 +83,25 @@ void loop() {
   digitalWrite(pillDropper.sensor.trigPin, LOW);
   pillDropper.sensor.duration = pulseIn(pillDropper.sensor.echoPin, HIGH);
   pillDropper.sensor.distance = pillDropper.sensor.duration * 0.034 / 2;
-  if(pillDropper.state.isOn) {
-    if(pillDropper.sensor.distance == 2 && pillDropper.canDispense) {
-      pillDropper.canDispense = false;
-      pillDropperServo.write(pillDropper.dropDistance);
+  // check if the dropper is on
+  if (pillDropper.btn.isOn)
+  {
+    if (pillDropper.sensor.distance == 2 && pillDropper.canDispense)
+    {                                                   // is the distance is just right and not currently dispensing.
+      pillDropper.canDispense = false;                  // disable future dispensing
+      pillDropperServo.write(pillDropper.dropDistance); // move servo down
       delay(1000);
-      pillDropperServo.write(-pillDropper.dropDistance);
+      pillDropperServo.write(-pillDropper.dropDistance); // return servo back to default
       delay(1000);
-    } else if (pillDropper.sensor.distance >= 10) {
-      pillDropper.canDispense = true;
+    }
+    else if (pillDropper.sensor.distance >= 10)
+    {                                 // is nothing close to sensor
+      pillDropper.canDispense = true; // enable future dispensing
     }
   }
 
-  //WaterPump
+  // WaterPump
+  // detect if hand is next to the front of the mechanism thru the ultrasonic sensor
   digitalWrite(waterPump.sensor.trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(waterPump.sensor.trigPin, HIGH);
@@ -95,43 +109,61 @@ void loop() {
   digitalWrite(waterPump.sensor.trigPin, LOW);
   waterPump.sensor.duration = pulseIn(waterPump.sensor.echoPin, HIGH);
   waterPump.sensor.distance = waterPump.sensor.duration * 0.034 / 2;
-  if(waterPump.state.isOn) {
-    if(waterPump.sensor.distance == 2 && waterPump.canDispense) {
-      waterPump.canDispense = false;
+  // check if pump is on
+  if (waterPump.btn.isOn)
+  {
+    if (waterPump.sensor.distance == 2 && waterPump.canDispense)
+    {                                // is the distance just right and not currently dispensing (pumping)
+      waterPump.canDispense = false; // disable future dispensing
       digitalWrite(waterPump.motorPin, HIGH);
       delay(2000);
-    } else if (waterPump.sensor.distance >= 10) {
-      digitalWrite(waterPump.motorPin, LOW);
-      waterPump.canDispense = true;
-    } else if (waterPump.canDispense == false) {
-      digitalWrite(waterPump.motorPin, LOW);
+    }
+    else if (waterPump.sensor.distance >= 10)
+    {                                        // is nothing close to sensor
+      digitalWrite(waterPump.motorPin, LOW); // force pump off
+      waterPump.canDispense = true;          // enable future dispensing
+    }
+    else if (waterPump.canDispense == false)
+    {                                        // can the mechanism NOT pump water
+      digitalWrite(waterPump.motorPin, LOW); // force pump off
     }
   }
 
-  //Both EStops
-  pillDropper.state.state = digitalRead(pillDropper.state.buttonPin);
-  if(pillDropper.state.state == LOW) {
-    pillDropper.state.isOn = false;
+  // Both EStops
+  // check if button is pressed. if so, change the mechanism's on state
+  pillDropper.btn.state = digitalRead(pillDropper.btn.buttonPin);
+  if (pillDropper.btn.state == LOW)
+  {
+    pillDropper.btn.isOn = false;
   }
 
-  if(pillDropper.state.isOn) {
-    digitalWrite(pillDropper.state.ledPin, HIGH);
-  } else {
-    digitalWrite(pillDropper.state.ledPin, LOW);  
+  // is mechanism is on, turn on it's LED
+  // else, turn off
+  if (pillDropper.btn.isOn)
+  {
+    digitalWrite(pillDropper.btn.ledPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(pillDropper.btn.ledPin, LOW);
   }
 
-  waterPump.state.state = digitalRead(waterPump.state.buttonPin);
-  if(waterPump.state.state == LOW) {
-    waterPump.state.isOn = false;
+  // check if button is pressed .if so, change the mechanism's on state
+  waterPump.btn.state = digitalRead(waterPump.btn.buttonPin);
+  if (waterPump.btn.state == LOW)
+  {
+    waterPump.btn.isOn = false;
     digitalWrite(waterPump.motorPin, LOW);
   }
 
-  if(waterPump.state.isOn) {
-    digitalWrite(waterPump.state.ledPin, HIGH);
-  } else {
-    digitalWrite(waterPump.state.ledPin, LOW);  
+  // is mechanism is on, turn on it's LED
+  // else, turn off
+  if (waterPump.btn.isOn)
+  {
+    digitalWrite(waterPump.btn.ledPin, HIGH);
   }
-
-
-
+  else
+  {
+    digitalWrite(waterPump.btn.ledPin, LOW);
+  }
 }
